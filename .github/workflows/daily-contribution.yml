@@ -22,7 +22,7 @@ jobs:
       - name: Configure Git
         run: |
           git config user.name "carbonthecoder"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config user.email "cleverai001@gmail.com"
 
       - name: Generate daily contributions
         run: |
