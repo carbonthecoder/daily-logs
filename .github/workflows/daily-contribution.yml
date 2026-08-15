@@ -1,0 +1,96 @@
+name: Daily Auto Contribution
+
+on:
+  schedule:
+    # Runs every day at 5:30 AM IST (00:00 UTC)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+permissions:
+  contents: write
+
+jobs:
+  auto-contribute:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "carbonthecoder"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Generate daily contributions
+        run: |
+          TODAY=$(date +"%Y-%m-%d")
+          mkdir -p logs
+
+          # Random commit count between 4-9
+          COMMIT_COUNT=$((RANDOM % 6 + 4))
+          echo "Generating $COMMIT_COUNT commits for $TODAY"
+
+          # Arrays of commit messages and content
+          MESSAGES=(
+            "docs: update daily notes for $TODAY"
+            "chore: refresh activity log"
+            "feat: add learning entry"
+            "refactor: reorganize daily log structure"
+            "fix: correct timestamp in activity tracker"
+            "style: clean up formatting in logs"
+            "ci: update automation metadata"
+            "docs: add reflection notes for $TODAY"
+            "chore: sync daily progress tracker"
+            "feat: log new insight"
+          )
+
+          SNIPPETS=(
+            "- Reviewed documentation and best practices"
+            "- Explored new coding patterns and techniques"
+            "- Refactored and cleaned up project structure"
+            "- Updated dependencies and configurations"
+            "- Added notes on recent learnings"
+            "- Practiced algorithm and data structure problems"
+            "- Worked on personal project improvements"
+            "- Studied system design concepts"
+            "- Reviewed and improved code quality"
+            "- Experimented with new tools and frameworks"
+          )
+
+          LOG_FILE="logs/activity_${TODAY}.md"
+          echo "# Daily Activity Log - $TODAY" > "$LOG_FILE"
+          echo "" >> "$LOG_FILE"
+
+          for i in $(seq 1 $COMMIT_COUNT); do
+            TIMESTAMP=$(date +"%H:%M:%S")
+            
+            # Pick random content
+            SNIPPET_IDX=$((RANDOM % ${#SNIPPETS[@]}))
+            MSG_IDX=$((RANDOM % ${#MESSAGES[@]}))
+
+            # Add entry to log
+            echo "## Entry $i - $TIMESTAMP" >> "$LOG_FILE"
+            echo "${SNIPPETS[$SNIPPET_IDX]}" >> "$LOG_FILE"
+            echo "" >> "$LOG_FILE"
+
+            # Update summary on even entries
+            if [ $((i % 2)) -eq 0 ]; then
+              echo "# Contribution Summary" > SUMMARY.md
+              echo "" >> SUMMARY.md
+              echo "Last updated: $TODAY $TIMESTAMP" >> SUMMARY.md
+              echo "Total entries today: $i" >> SUMMARY.md
+            fi
+
+            # Stage and commit
+            git add -A
+            git commit -m "${MESSAGES[$MSG_IDX]} #$i"
+
+            # Small delay
+            sleep 2
+          done
+
+      - name: Push changes
+        run: git push origin main
